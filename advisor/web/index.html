@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn Advisor</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #141418;
+    --surface-2: #1c1c22;
+    --border: #2a2a32;
+    --text: #e8e6e3;
+    --text-dim: #8a8890;
+    --accent: #4f8cff;
+    --approve: #22c55e;
+    --approve-glow: rgba(34, 197, 94, 0.3);
+    --reject: #ef4444;
+    --reject-glow: rgba(239, 68, 68, 0.3);
+    --gold: #f59e0b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    text-align: center;
+    padding-block-end: 24px;
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header .subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-block-start: 4px;
+  }
+
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 12px 0;
+    margin-block-end: 20px;
+    border-block-end: 1px solid var(--border);
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+
+  .stat.pending .stat-value { color: var(--gold); }
+  .stat.approved .stat-value { color: var(--approve); }
+  .stat.rejected .stat-value { color: var(--reject); }
+
+  .card-container {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    perspective: 1000px;
+  }
+
+  .card {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 24px;
+    position: relative;
+    touch-action: pan-y;
+    user-select: none;
+    cursor: grab;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .card:active { cursor: grabbing; }
+
+  .card.swiping-right {
+    box-shadow: 0 0 40px var(--approve-glow), inset 0 0 20px var(--approve-glow);
+  }
+
+  .card.swiping-left {
+    box-shadow: 0 0 40px var(--reject-glow), inset 0 0 20px var(--reject-glow);
+  }
+
+  .card-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-block-end: 16px;
+  }
+
+  .badge-technical { background: rgba(79, 140, 255, 0.15); color: var(--accent); }
+  .badge-insight { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
+  .badge-story { background: rgba(245, 158, 11, 0.15); color: var(--gold); }
+  .badge-trend { background: rgba(34, 197, 94, 0.15); color: var(--approve); }
+
+  .card-hook {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-block-end: 16px;
+    color: #fff;
+  }
+
+  .card-body {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-dim);
+    white-space: pre-line;
+    margin-block-end: 20px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .card-body::-webkit-scrollbar { width: 4px; }
+  .card-body::-webkit-scrollbar-track { background: transparent; }
+  .card-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .card-meta {
+    border-block-start: 1px solid var(--border);
+    padding-block-start: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .meta-icon {
+    flex-shrink: 0;
+    width: 16px;
+    text-align: center;
+    opacity: 0.6;
+  }
+
+  .meta-label {
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  .meta-value {
+    color: var(--text);
+  }
+
+  .swipe-indicator {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 48px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+  }
+
+  .swipe-indicator.approve {
+    inset-inline-end: 24px;
+    color: var(--approve);
+    transform: translateY(-50%) rotate(15deg);
+  }
+
+  .swipe-indicator.reject {
+    inset-inline-start: 24px;
+    color: var(--reject);
+    transform: translateY(-50%) rotate(-15deg);
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding-block-start: 24px;
+    padding-block-end: 16px;
+  }
+
+  .action-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .action-btn:hover {
+    transform: scale(1.12);
+  }
+
+  .action-btn.reject-btn:hover {
+    border-color: var(--reject);
+    box-shadow: 0 0 24px var(--reject-glow);
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  .action-btn.approve-btn:hover {
+    border-color: var(--approve);
+    box-shadow: 0 0 24px var(--approve-glow);
+    background: rgba(34, 197, 94, 0.08);
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .empty-state .emoji { font-size: 64px; }
+  .empty-state h2 { font-size: 20px; color: var(--text); }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  .loading {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-block-start-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @keyframes cardEnter {
+    from { opacity: 0; transform: scale(0.92) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .card-enter { animation: cardEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+  @keyframes flyRight {
+    to { transform: translateX(150%) rotate(20deg); opacity: 0; }
+  }
+
+  @keyframes flyLeft {
+    to { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+  }
+
+  .fly-right { animation: flyRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .fly-left { animation: flyLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+  .char-count {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: end;
+    margin-block-start: -12px;
+    margin-block-end: 12px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+function App() {
+  const [posts, setPosts] = useState([]);
+  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0 });
+  const [loading, setLoading] = useState(true);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [swipeClass, setSwipeClass] = useState('');
+  const [cardClass, setCardClass] = useState('card-enter');
+  const cardRef = useRef(null);
+  const dragState = useRef({ startX: 0, currentX: 0, dragging: false });
+
+  const fetchPosts = useCallback(async () => {
+    try {
+      const [postsRes, statsRes] = await Promise.all([
+        fetch('/api/posts?status=pending'),
+        fetch('/api/stats'),
+      ]);
+      const postsData = await postsRes.json();
+      const statsData = await statsRes.json();
+      setPosts(postsData);
+      setStats(statsData);
+      setCurrentIdx(0);
+      setCardClass('card-enter');
+    } catch (err) {
+      console.error('Failed to fetch:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  const handleDecision = useCallback(async (decision) => {
+    const post = posts[currentIdx];
+    if (!post) return;
+
+    setSwipeClass('');
+    setCardClass(decision === 'approve' ? 'fly-right' : 'fly-left');
+
+    try {
+      await fetch(`/api/posts/${post.id}/${decision}`, { method: 'POST' });
+      setStats(prev => ({
+        ...prev,
+        pending: prev.pending - 1,
+        [decision === 'approve' ? 'approved' : 'rejected']:
+          prev[decision === 'approve' ? 'approved' : 'rejected'] + 1,
+      }));
+    } catch (err) {
+      console.error('Decision failed:', err);
+    }
+
+    setTimeout(() => {
+      const nextPosts = posts.filter((_, i) => i !== currentIdx);
+      setPosts(nextPosts);
+      setCurrentIdx(0);
+      setCardClass('card-enter');
+    }, 400);
+  }, [posts, currentIdx]);
+
+  const handlePointerDown = useCallback((e) => {
+    dragState.current = { startX: e.clientX, currentX: e.clientX, dragging: true };
+  }, []);
+
+  const handlePointerMove = useCallback((e) => {
+    if (!dragState.current.dragging || !cardRef.current) return;
+    dragState.current.currentX = e.clientX;
+    const dx = e.clientX - dragState.current.startX;
+    const rotation = dx * 0.08;
+    cardRef.current.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+
+    if (dx > 60) setSwipeClass('swiping-right');
+    else if (dx < -60) setSwipeClass('swiping-left');
+    else setSwipeClass('');
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    if (!dragState.current.dragging || !cardRef.current) return;
+    dragState.current.dragging = false;
+    const dx = dragState.current.currentX - dragState.current.startX;
+
+    if (dx > 100) {
+      handleDecision('approve');
+    } else if (dx < -100) {
+      handleDecision('reject');
+    } else {
+      cardRef.current.style.transform = '';
+      cardRef.current.style.transition = 'transform 0.3s ease';
+      setSwipeClass('');
+      setTimeout(() => {
+        if (cardRef.current) cardRef.current.style.transition = '';
+      }, 300);
+    }
+  }, [handleDecision]);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'ArrowRight') handleDecision('approve');
+      else if (e.key === 'ArrowLeft') handleDecision('reject');
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [handleDecision]);
+
+  const current = posts[currentIdx];
+  const badgeClass = current ? `badge-${current.category}` : '';
+  const sourceIcon = current?.source?.type === 'github' ? '🐙' : current?.source?.type === 'research' ? '🔬' : '📰';
+
+  return (
+    <div className="app">
+      <div className="header">
+        <h1>LinkedIn Advisor</h1>
+        <div className="subtitle">Swipe right to approve · left to reject</div>
+      </div>
+
+      <div className="stats-bar">
+        <div className="stat pending">
+          <div className="stat-value">{stats.pending}</div>
+          <div className="stat-label">Pending</div>
+        </div>
+        <div className="stat approved">
+          <div className="stat-value">{stats.approved}</div>
+          <div className="stat-label">Approved</div>
+        </div>
+        <div className="stat rejected">
+          <div className="stat-value">{stats.rejected}</div>
+          <div className="stat-label">Rejected</div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="loading"><div className="spinner" /></div>
+      ) : !current ? (
+        <div className="empty-state">
+          <div className="emoji">✨</div>
+          <h2>All caught up</h2>
+          <p>No pending drafts. Run <code>linkedin-advisor generate</code> to create new ones.</p>
+        </div>
+      ) : (
+        <>
+          <div className="card-container">
+            <div
+              ref={cardRef}
+              className={`card ${cardClass} ${swipeClass}`}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+            >
+              <div className="swipe-indicator approve" style={{ opacity: swipeClass === 'swiping-right' ? 0.9 : 0 }}>✓</div>
+              <div className="swipe-indicator reject" style={{ opacity: swipeClass === 'swiping-left' ? 0.9 : 0 }}>✗</div>
+
+              <span className={`card-badge ${badgeClass}`}>{current.category}</span>
+              <div className="card-hook">{current.hook}</div>
+              <div className="char-count">{current.body?.length || 0} chars</div>
+              <div className="card-body">{current.body}</div>
+
+              <div className="card-meta">
+                <div className="meta-row">
+                  <span className="meta-icon">{sourceIcon}</span>
+                  <span className="meta-label">Source:</span>
+                  <span className="meta-value">{current.source?.title}</span>
+                </div>
+                {current.image_suggestion && (
+                  <div className="meta-row">
+                    <span className="meta-icon">🖼</span>
+                    <span className="meta-label">Image:</span>
+                    <span className="meta-value">{current.image_suggestion}</span>
+                  </div>
+                )}
+                {current.best_time && (
+                  <div className="meta-row">
+                    <span className="meta-icon">⏰</span>
+                    <span className="meta-label">Post at:</span>
+                    <span className="meta-value">{current.best_time}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="actions">
+            <button className="action-btn reject-btn" onClick={() => handleDecision('reject')} title="Reject">✗</button>
+            <button className="action-btn approve-btn" onClick={() => handleDecision('approve')} title="Approve">✓</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
