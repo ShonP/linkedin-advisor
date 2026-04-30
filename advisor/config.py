@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     tavily_api_key: str = ""
     github_username: str = ""
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 _settings: Settings | None = None
