@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-
 import click
 
 from advisor.cli_draft import draft
@@ -17,23 +15,6 @@ def main() -> None:
 main.add_command(draft)
 
 
-@main.command()
-@click.option("--topic", default="", help="Optional topic to focus on.")
-def generate(topic: str) -> None:
-    """Generate a single post draft (alias for 'draft generate')."""
-    from advisor.pipeline import create_draft
-
-    click.echo("🚀 Generating LinkedIn post draft...")
-    result = asyncio.run(create_draft(topic))
-    if not result:
-        click.echo("❌ No draft generated.")
-        return
-    draft_obj, image_path = result
-    click.echo(f"✅ Draft created: {draft_obj.hook}")
-    click.echo(f"   ID: {draft_obj.id}")
-    click.echo(f"   Preview: {image_path}")
-
-
 @main.group()
 def image() -> None:
     """Image generation commands."""
@@ -41,29 +22,28 @@ def image() -> None:
 
 @image.command("generate")
 @click.argument("prompt")
-@click.option("--filename", default="", help="Output filename (e.g. diagram.png).")
+@click.option("--filename", default="", help="Output filename.")
 def image_generate(prompt: str, filename: str) -> None:
-    """Generate an image from a text prompt."""
+    """Generate an image with gpt-image-2."""
     from advisor.tools.generate_image import generate_image
 
-    click.echo("🎨 Generating image...")
     path = generate_image(prompt, filename)
     if path:
-        click.echo(f"✅ Image saved: {path}")
+        click.echo(f"✅ {path} ({path.stat().st_size} bytes)")
     else:
-        click.echo("❌ Image generation failed.")
+        click.echo("❌ Image generation failed")
 
 
 @main.command()
-@click.option("--host", default="0.0.0.0", show_default=True, help="Host to bind to.")
-@click.option("--port", default=8000, type=int, show_default=True, help="Port to bind to.")
+@click.option("--host", default="0.0.0.0", show_default=True)
+@click.option("--port", default=8000, type=int, show_default=True)
 def serve(host: str, port: int) -> None:
     """Start the FastAPI server with the swipe UI."""
     import uvicorn
 
     from advisor.api.server import app
 
-    click.echo(f"🌐 Starting server at http://{host}:{port}")
+    click.echo(f"🌐 http://{host}:{port}")
     uvicorn.run(app, host=host, port=port)
 
 

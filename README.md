@@ -57,10 +57,8 @@ linkedin-advisor image generate <prompt> [--filename name.png]
 linkedin-advisor serve [--host 0.0.0.0] [--port 8000]
 ```
 
-### Backward Compatibility
 
 ```bash
-linkedin-advisor generate [--topic TOPIC]  # Alias for 'draft generate'
 ```
 
 ## Architecture
