@@ -116,6 +116,15 @@ class PostsDB:
         row = self._conn.execute("SELECT * FROM drafts WHERE id = ?", (post_id,)).fetchone()
         return self._row_to_draft(row) if row else None
 
+    def get_post_full(self, post_id: str) -> dict[str, object] | None:
+        """Return complete draft data including body, source, and all metadata."""
+        row = self._conn.execute("SELECT * FROM drafts WHERE id = ?", (post_id,)).fetchone()
+        if not row:
+            return None
+        data = self._row_to_draft(row)
+        data["body_length"] = len(str(data["body"]))
+        return data
+
     def stats(self) -> dict[str, int]:
         rows = self._conn.execute("SELECT status, COUNT(*) as cnt FROM drafts GROUP BY status").fetchall()
         result = {"pending": 0, "approved": 0, "rejected": 0, "total": 0}

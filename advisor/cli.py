@@ -6,16 +6,21 @@ import asyncio
 
 import click
 
+from advisor.cli_draft import draft
+
 
 @click.group()
 def main() -> None:
     """LinkedIn Content Advisor — generate and manage LinkedIn post drafts."""
 
 
+main.add_command(draft)
+
+
 @main.command()
 @click.option("--topic", default="", help="Optional topic to focus on.")
 def generate(topic: str) -> None:
-    """Generate a single post draft."""
+    """Generate a single post draft (alias for 'draft generate')."""
     from advisor.pipeline import create_draft
 
     click.echo("🚀 Generating LinkedIn post draft...")
@@ -23,27 +28,30 @@ def generate(topic: str) -> None:
     if not result:
         click.echo("❌ No draft generated.")
         return
-    draft, image_path = result
-    click.echo(f"✅ Draft created: {draft.hook}")
-    click.echo(f"   ID: {draft.id}")
+    draft_obj, image_path = result
+    click.echo(f"✅ Draft created: {draft_obj.hook}")
+    click.echo(f"   ID: {draft_obj.id}")
     click.echo(f"   Preview: {image_path}")
 
 
-@main.command()
-@click.option("--topic", default="", help="Optional topic to focus on.")
-def preview(topic: str) -> None:
-    """Generate a draft and open its preview image."""
-    from advisor.pipeline import create_draft
+@main.group()
+def image() -> None:
+    """Image generation commands."""
 
-    click.echo("🚀 Generating draft with preview...")
-    result = asyncio.run(create_draft(topic))
-    if not result:
-        click.echo("❌ No draft generated.")
-        return
-    draft, image_path = result
-    click.echo(f"✅ {draft.hook}")
-    click.echo(f"   ID: {draft.id}")
-    click.launch(str(image_path))
+
+@image.command("generate")
+@click.argument("prompt")
+@click.option("--filename", default="", help="Output filename (e.g. diagram.png).")
+def image_generate(prompt: str, filename: str) -> None:
+    """Generate an image from a text prompt."""
+    from advisor.tools.generate_image import generate_image
+
+    click.echo("🎨 Generating image...")
+    path = generate_image(prompt, filename)
+    if path:
+        click.echo(f"✅ Image saved: {path}")
+    else:
+        click.echo("❌ Image generation failed.")
 
 
 @main.command()
@@ -59,82 +67,5 @@ def serve(host: str, port: int) -> None:
     uvicorn.run(app, host=host, port=port)
 
 
-@main.command("list")
-@click.option(
-    "--status",
-    type=click.Choice(["pending", "approved", "rejected", "all"]),
-    default="pending",
-    show_default=True,
-    help="Filter posts by status.",
-)
-def list_posts(status: str) -> None:
-    """Show posts filtered by status."""
-    from advisor.db import PostsDB
-
-    db = PostsDB()
-    try:
-        if status == "all":
-            posts = db.list_pending() + db.list_approved() + db.list_rejected()
-        else:
-            posts = db.list_by_status(status)
-
-        if not posts:
-            click.echo(f"No {status} posts found.")
-            return
-
-        for post in posts:
-            status_icon = {"pending": "⏳", "approved": "✅", "rejected": "❌"}.get(str(post["status"]), "❓")
-            click.echo(f"\n{status_icon} [{post['category']}] {post['hook']}")
-            click.echo(f"   ID: {post['id']}")
-            click.echo(f"   Created: {post['created_at']}")
-
-        stats = db.stats()
-        click.echo(
-            f"\n📊 Stats: {stats['pending']} pending, {stats['approved']} approved, {stats['rejected']} rejected"
-        )
-    finally:
-        db.close()
-
-
 if __name__ == "__main__":
     main()
-
-
-@main.command()
-@click.argument("draft_id")
-def approve(draft_id: str) -> None:
-    """Approve a draft."""
-    from advisor.pipeline import approve_draft
-
-    if approve_draft(draft_id):
-        click.echo(f"✅ Approved {draft_id}")
-    else:
-        click.echo(f"❌ Draft {draft_id} not found")
-
-
-@main.command()
-@click.argument("draft_id")
-def reject(draft_id: str) -> None:
-    """Reject a draft."""
-    from advisor.pipeline import reject_draft
-
-    if reject_draft(draft_id):
-        click.echo(f"🗑️ Rejected {draft_id}")
-    else:
-        click.echo(f"❌ Draft {draft_id} not found")
-
-
-@main.command()
-@click.argument("draft_id")
-@click.argument("instructions")
-def edit(draft_id: str, instructions: str) -> None:
-    """Edit a draft with instructions."""
-    from advisor.pipeline import edit_draft
-
-    result = asyncio.run(edit_draft(draft_id, instructions))
-    if result:
-        draft, image_path = result
-        click.echo(f"✏️ Edited: {draft.hook}")
-        click.echo(f"   Preview: {image_path}")
-    else:
-        click.echo(f"❌ Edit failed for {draft_id}")
