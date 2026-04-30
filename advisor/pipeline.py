@@ -12,6 +12,7 @@ from advisor.log import attach_file_handler, detach_file_handler, log, new_run_i
 from advisor.middleware import get_token_usage, reset_token_usage
 from advisor.models.post import PostDraft
 from advisor.preview import generate_preview_image
+from advisor.tools.generate_image import generate_image
 
 
 async def create_draft(topic: str = "") -> tuple[PostDraft, Path] | None:
@@ -37,7 +38,18 @@ async def create_draft(topic: str = "") -> tuple[PostDraft, Path] | None:
             db.close()
 
         full_text = f"{draft.hook}\n{draft.body}"
-        image_path = generate_preview_image(full_text)
+
+        # Generate diagram for technical posts
+        diagram_path = None
+        if draft.category == "technical" and draft.image_suggestion:
+            log.info("Generating diagram for technical post")
+            diagram_path = generate_image(
+                draft.image_suggestion,
+                f"draft-{draft.id[:8]}.png",
+                quality="medium",
+            )
+
+        image_path = generate_preview_image(full_text, diagram_path=diagram_path)
 
         usage = get_token_usage()
         log.info("Draft created [%s], %d tokens", run_id, usage.total_tokens)
@@ -100,7 +112,12 @@ async def edit_draft(post_id: str, instructions: str) -> tuple[PostDraft, Path] 
         db.close()
 
     full_text = f"{revised.hook}\n{revised.body}"
-    image_path = generate_preview_image(full_text)
+
+    diagram_path = None
+    if revised.category == "technical" and revised.image_suggestion:
+        diagram_path = generate_image(revised.image_suggestion, f"draft-{post_id[:8]}.png", quality="medium")
+
+    image_path = generate_preview_image(full_text, diagram_path=diagram_path)
 
     log.info("Edited draft %s", post_id)
     return revised, image_path
