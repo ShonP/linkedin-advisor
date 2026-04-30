@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     model: str = "gpt-5.5"
     tavily_api_key: str = ""
     github_username: str = ""
+    azure_image_endpoint: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

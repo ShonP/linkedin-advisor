@@ -15,7 +15,7 @@ _IMAGES_DIR = Path("data/images")
 
 
 def generate_image(prompt: str, filename: str = "", size: str = "1536x1024") -> Path | None:
-    """Generate an image using gpt-image-2 and save to data/images/."""
+    """Generate an image using gpt-image-2 deployment endpoint."""
     settings = get_settings()
     _IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -23,13 +23,16 @@ def generate_image(prompt: str, filename: str = "", size: str = "1536x1024") -> 
         h = hashlib.md5(prompt.encode()).hexdigest()[:12]
         filename = f"img-{h}.png"
 
-    url = f"{settings.openai_base_url.rstrip('/')}/images/generations"
+    endpoint = settings.azure_image_endpoint
+    if not endpoint:
+        log.error("AZURE_IMAGE_ENDPOINT not set")
+        return None
 
     try:
         resp = httpx.post(
-            url,
+            endpoint,
             headers={"api-key": settings.azure_api_key, "Content-Type": "application/json"},
-            json={"model": "gpt-image-2", "prompt": prompt, "n": 1, "size": size},
+            json={"prompt": prompt, "n": 1, "size": size},
             timeout=300,
         )
         resp.raise_for_status()
