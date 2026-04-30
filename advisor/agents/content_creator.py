@@ -11,6 +11,7 @@ from advisor.middleware import caching, llm_call_logging, retry, tool_call_loggi
 from advisor.models.post import PostDraft, SingleDraftResponse
 from advisor.tools.github_activity import github_activity
 from advisor.tools.read_digest import read_digest
+from advisor.tools.read_repo import read_repo
 from advisor.tools.read_reports import read_reports
 
 SYSTEM_PROMPT = """\
@@ -85,7 +86,7 @@ async def generate_single_draft(topic: str = "") -> PostDraft | None:
         client=get_chat_client(),
         name="content-creator",
         instructions=SYSTEM_PROMPT,
-        tools=[github_activity, read_digest, read_reports],
+        tools=[github_activity, read_repo, read_digest, read_reports],
         middleware=[tool_call_logging, caching, retry, llm_call_logging],
     )
 
