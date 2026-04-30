@@ -14,8 +14,8 @@ from advisor.log import log
 _IMAGES_DIR = Path("data/images")
 
 
-def generate_image(prompt: str, filename: str = "", size: str = "1536x1024") -> Path | None:
-    """Generate an image using gpt-image-2 deployment endpoint."""
+def generate_image(prompt: str, filename: str = "", size: str = "1536x1024", quality: str = "medium") -> Path | None:
+    """Generate an image using gpt-image-2 via the Azure deployment endpoint."""
     settings = get_settings()
     _IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -25,14 +25,14 @@ def generate_image(prompt: str, filename: str = "", size: str = "1536x1024") -> 
 
     endpoint = settings.azure_image_endpoint
     if not endpoint:
-        log.error("AZURE_IMAGE_ENDPOINT not set")
+        log.error("AZURE_IMAGE_ENDPOINT not configured")
         return None
 
     try:
         resp = httpx.post(
             endpoint,
             headers={"api-key": settings.azure_api_key, "Content-Type": "application/json"},
-            json={"prompt": prompt, "n": 1, "size": size},
+            json={"prompt": prompt, "n": 1, "size": size, "quality": quality},
             timeout=300,
         )
         resp.raise_for_status()
