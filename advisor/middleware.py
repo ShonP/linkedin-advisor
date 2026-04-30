@@ -91,8 +91,14 @@ async def tool_call_logging(context: FunctionInvocationContext, next_handler) ->
         log.error("Tool %s FAILED after %.0fms: %s", context.function.name, elapsed, e)
         raise
     elapsed = (time.monotonic() - start) * 1000
-    result_str = str(context.result) if context.result is not None else ""
-    # Log full result length to file, truncated to console
+    raw_result = context.result
+    # Extract actual text content from MAF result wrapper
+    if hasattr(raw_result, 'text'):
+        result_str = raw_result.text or ''
+    elif isinstance(raw_result, str):
+        result_str = raw_result
+    else:
+        result_str = str(raw_result) if raw_result is not None else ''
     log.info("Tool %s returned %d chars in %.0fms", context.function.name, len(result_str), elapsed)
     if len(result_str) > 200:
         log.debug("Tool %s result (first 500): %s", context.function.name, result_str[:500])
