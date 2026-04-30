@@ -37,22 +37,34 @@ async def create_draft(topic: str = "") -> tuple[PostDraft, Path] | None:
         finally:
             db.close()
 
+        log.info("Draft saved: id=%s category=%s hook=%s", draft.id, draft.category, draft.hook[:60])
+        log.info("Draft metadata: source=%s chars=%d image_suggestion=%s",
+                 draft.source.type if draft.source else "none",
+                 len(draft.body),
+                 (draft.image_suggestion or "")[:80])
+
         full_text = f"{draft.hook}\n{draft.body}"
 
         # Generate diagram for technical posts
         diagram_path = None
         if draft.category == "technical" and draft.image_suggestion:
-            log.info("Generating diagram for technical post")
+            log.info("Generating diagram: prompt=%s", draft.image_suggestion[:100])
             diagram_path = generate_image(
                 draft.image_suggestion,
                 f"draft-{draft.id[:8]}.png",
                 quality="medium",
             )
+            if diagram_path:
+                log.info("Diagram saved: %s (%d bytes)", diagram_path, diagram_path.stat().st_size)
+            else:
+                log.warning("Diagram generation failed")
 
         image_path = generate_preview_image(full_text, diagram_path=diagram_path)
+        log.info("Preview saved: %s (%d bytes) diagram=%s", image_path, image_path.stat().st_size, bool(diagram_path))
 
         usage = get_token_usage()
-        log.info("Draft created [%s], %d tokens", run_id, usage.total_tokens)
+        log.info("Draft created [%s]: %d tokens, est cost $%.4f",
+                 run_id, usage.total_tokens, usage.total_tokens * 0.000005)
         return draft, image_path
     except Exception:
         log.exception("Draft creation failed")
