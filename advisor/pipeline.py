@@ -43,7 +43,7 @@ async def create_draft(topic: str = "") -> tuple[PostDraft, Path] | None:
                  len(draft.body),
                  (draft.image_suggestion or "")[:80])
 
-        full_text = f"{draft.hook}\n{draft.body}"
+        full_text = draft.body if draft.body.startswith(draft.hook) else f"{draft.hook}\n{draft.body}"
 
         # Generate diagram for technical posts
         diagram_path = None
@@ -123,7 +123,7 @@ async def edit_draft(post_id: str, instructions: str) -> tuple[PostDraft, Path] 
     finally:
         db.close()
 
-    full_text = f"{revised.hook}\n{revised.body}"
+    full_text = revised.body if revised.body.startswith(revised.hook) else f"{revised.hook}\n{revised.body}"
 
     diagram_path = None
     if revised.category == "technical" and revised.image_suggestion:
