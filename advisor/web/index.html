@@ -2,278 +2,586 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>LinkedIn Advisor</title>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0c;
-    --surface: #141418;
-    --surface-2: #1c1c22;
-    --border: #2a2a32;
-    --text: #e8e6e3;
-    --text-dim: #8a8890;
-    --accent: #4f8cff;
-    --approve: #22c55e;
-    --approve-glow: rgba(34, 197, 94, 0.3);
-    --reject: #ef4444;
-    --reject-glow: rgba(239, 68, 68, 0.3);
-    --gold: #f59e0b;
+    --li-blue: #0a66c2;
+    --li-blue-hover: #004182;
+    --li-bg: #f3f2ef;
+    --li-card: #ffffff;
+    --li-border: #e0dfdc;
+    --li-text: #191919;
+    --li-text-secondary: #666666;
+    --li-text-tertiary: #00000099;
+    --li-icon: #666666;
+    --approve: #057642;
+    --approve-flash: rgba(5, 118, 66, 0.15);
+    --reject: #cc1016;
+    --reject-flash: rgba(204, 16, 22, 0.15);
+    --font: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: var(--font);
+    background: var(--li-bg);
+    color: var(--li-text);
     min-height: 100dvh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
   .app {
-    max-width: 480px;
+    max-width: 560px;
     margin: 0 auto;
-    padding: 20px 16px;
+    padding: 0 0 100px;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
   }
 
+  /* ── Header ── */
   .header {
-    text-align: center;
-    padding-block-end: 24px;
+    background: var(--li-card);
+    border-block-end: 1px solid var(--li-border);
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
 
-  .header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    font-weight: 900;
-    letter-spacing: -0.5px;
-    background: linear-gradient(135deg, var(--accent), #a78bfa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .header .subtitle {
-    font-size: 13px;
-    color: var(--text-dim);
-    margin-block-start: 4px;
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
+  .header-logo {
+    width: 28px;
+    height: 28px;
+    background: var(--li-blue);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .header-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--li-text);
+  }
+
+  .header-subtitle {
+    font-size: 12px;
+    color: var(--li-text-secondary);
+  }
+
+  /* ── Stats Bar ── */
   .stats-bar {
     display: flex;
     justify-content: center;
-    gap: 24px;
-    padding: 12px 0;
-    margin-block-end: 20px;
-    border-block-end: 1px solid var(--border);
+    gap: 2px;
+    padding: 8px 16px;
+    background: var(--li-card);
+    border-block-end: 1px solid var(--li-border);
   }
 
   .stat {
+    flex: 1;
     text-align: center;
+    padding: 8px 4px;
+    border-radius: 8px;
+    transition: background 0.15s;
   }
 
   .stat-value {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
+    line-height: 1.2;
   }
 
   .stat-label {
     font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    color: var(--li-text-secondary);
+    margin-block-start: 2px;
   }
 
-  .stat.pending .stat-value { color: var(--gold); }
+  .stat.pending .stat-value { color: var(--li-blue); }
   .stat.approved .stat-value { color: var(--approve); }
   .stat.rejected .stat-value { color: var(--reject); }
 
-  .card-container {
+  /* ── Card Stack Container ── */
+  .card-area {
     flex: 1;
     position: relative;
+    padding: 16px;
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    perspective: 1000px;
+    flex-direction: column;
+    align-items: center;
   }
 
-  .card {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 28px 24px;
+  .card-stack {
     position: relative;
+    width: 100%;
+    min-height: 420px;
+  }
+
+  /* ── Back card (peek) ── */
+  .card-behind {
+    position: absolute;
+    top: 8px;
+    left: 4px;
+    right: 4px;
+    height: 100%;
+    background: var(--li-card);
+    border-radius: 8px;
+    border: 1px solid var(--li-border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    z-index: 1;
+  }
+
+  /* ── LinkedIn Post Card ── */
+  .li-card {
+    position: relative;
+    width: 100%;
+    background: var(--li-card);
+    border-radius: 8px;
+    border: 1px solid var(--li-border);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 10;
     touch-action: pan-y;
     user-select: none;
     cursor: grab;
-    transition: box-shadow 0.3s ease;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
   }
 
-  .card:active { cursor: grabbing; }
+  .li-card:active { cursor: grabbing; }
 
-  .card.swiping-right {
-    box-shadow: 0 0 40px var(--approve-glow), inset 0 0 20px var(--approve-glow);
+  .li-card.swiping-right {
+    box-shadow: 0 0 0 3px var(--approve), 0 4px 20px rgba(5, 118, 66, 0.25);
   }
 
-  .card.swiping-left {
-    box-shadow: 0 0 40px var(--reject-glow), inset 0 0 20px var(--reject-glow);
+  .li-card.swiping-left {
+    box-shadow: 0 0 0 3px var(--reject), 0 4px 20px rgba(204, 16, 22, 0.25);
   }
 
-  .card-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 100px;
-    font-size: 11px;
+  /* ── Post Header (profile section) ── */
+  .post-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px 0;
+  }
+
+  .profile-pic {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0a66c2, #0073b1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    margin-block-end: 16px;
+    font-size: 18px;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
   }
 
-  .badge-technical { background: rgba(79, 140, 255, 0.15); color: var(--accent); }
-  .badge-insight { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
-  .badge-story { background: rgba(245, 158, 11, 0.15); color: var(--gold); }
-  .badge-trend { background: rgba(34, 197, 94, 0.15); color: var(--approve); }
-
-  .card-hook {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.3;
-    margin-block-end: 16px;
-    color: #fff;
+  .post-author-info {
+    flex: 1;
+    min-width: 0;
   }
 
-  .card-body {
+  .post-author-name {
     font-size: 14px;
-    line-height: 1.7;
-    color: var(--text-dim);
+    font-weight: 600;
+    color: var(--li-text);
+    line-height: 1.3;
+  }
+
+  .post-author-headline {
+    font-size: 12px;
+    color: var(--li-text-secondary);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .post-time {
+    font-size: 12px;
+    color: var(--li-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-block-start: 2px;
+  }
+
+  .post-time svg {
+    width: 14px;
+    height: 14px;
+    fill: var(--li-text-secondary);
+  }
+
+  .post-header-actions {
+    flex-shrink: 0;
+    padding-block-start: 4px;
+  }
+
+  .post-header-actions svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--li-icon);
+  }
+
+  /* ── Post Body ── */
+  .post-body {
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--li-text);
     white-space: pre-line;
-    margin-block-end: 20px;
-    max-height: 280px;
+    word-wrap: break-word;
+    max-height: 300px;
     overflow-y: auto;
   }
 
-  .card-body::-webkit-scrollbar { width: 4px; }
-  .card-body::-webkit-scrollbar-track { background: transparent; }
-  .card-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .post-body::-webkit-scrollbar { width: 3px; }
+  .post-body::-webkit-scrollbar-track { background: transparent; }
+  .post-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 
-  .card-meta {
-    border-block-start: 1px solid var(--border);
-    padding-block-start: 16px;
+  .post-hook {
+    font-weight: 600;
+    margin-block-end: 4px;
+  }
+
+  .post-hashtags {
+    color: var(--li-blue);
+    font-weight: 600;
+    margin-block-start: 8px;
+  }
+
+  /* ── Reactions Bar ── */
+  .post-reactions {
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--li-text-secondary);
+    border-block-end: 1px solid var(--li-border);
+    padding-block-end: 8px;
+  }
+
+  .reactions-icons {
+    display: flex;
+    align-items: center;
+    gap: -2px;
+  }
+
+  .reaction-emoji {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    margin-inline-end: -3px;
+    border: 1.5px solid white;
+    position: relative;
+  }
+
+  .reaction-like { background: #378fe9; color: white; z-index: 3; }
+  .reaction-celebrate { background: #44712e; color: white; z-index: 2; }
+  .reaction-love { background: #df704d; color: white; z-index: 1; }
+
+  .reactions-count {
+    margin-inline-start: 6px;
+  }
+
+  /* ── LinkedIn Action Bar ── */
+  .post-actions {
+    display: flex;
+    padding: 4px 8px;
+  }
+
+  .li-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 4px;
+    border: none;
+    background: none;
+    color: var(--li-icon);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: default;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+
+  .li-action-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--li-icon);
+  }
+
+  /* ── Metadata Panel (below card) ── */
+  .meta-panel {
+    margin-block-start: 12px;
+    width: 100%;
+    background: var(--li-card);
+    border-radius: 8px;
+    border: 1px solid var(--li-border);
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
+
+  .meta-panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--li-text-secondary);
+    margin-block-end: 2px;
+  }
+
+  .meta-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .meta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .badge-technical { background: #e8f0fe; color: #1967d2; }
+  .badge-insight { background: #fce8e6; color: #c5221f; }
+  .badge-story { background: #fef7e0; color: #ea8600; }
+  .badge-trend { background: #e6f4ea; color: #137333; }
 
   .meta-row {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1.4;
   }
 
   .meta-icon {
     flex-shrink: 0;
-    width: 16px;
-    text-align: center;
-    opacity: 0.6;
+    font-size: 14px;
+    line-height: 1.4;
   }
 
   .meta-label {
-    color: var(--text-dim);
+    color: var(--li-text-secondary);
     font-weight: 500;
+    white-space: nowrap;
   }
 
   .meta-value {
-    color: var(--text);
+    color: var(--li-text);
   }
 
-  .swipe-indicator {
+  .char-count {
+    font-size: 12px;
+    color: var(--li-text-secondary);
+    text-align: end;
+  }
+
+  /* ── Swipe Overlays ── */
+  .swipe-overlay {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 48px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    pointer-events: none;
-  }
-
-  .swipe-indicator.approve {
-    inset-inline-end: 24px;
-    color: var(--approve);
-    transform: translateY(-50%) rotate(15deg);
-  }
-
-  .swipe-indicator.reject {
-    inset-inline-start: 24px;
-    color: var(--reject);
-    transform: translateY(-50%) rotate(-15deg);
-  }
-
-  .actions {
-    display: flex;
-    justify-content: center;
-    gap: 32px;
-    padding-block-start: 24px;
-    padding-block-end: 16px;
-  }
-
-  .action-btn {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    background: var(--surface);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    border-radius: 8px;
+    z-index: 20;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .swipe-overlay.visible { opacity: 1; }
+
+  .swipe-overlay-approve {
+    background: var(--approve-flash);
+  }
+
+  .swipe-overlay-reject {
+    background: var(--reject-flash);
+  }
+
+  .swipe-stamp {
+    font-size: 48px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    padding: 8px 24px;
+    border-radius: 12px;
+    border: 5px solid;
+  }
+
+  .stamp-approve {
+    color: var(--approve);
+    border-color: var(--approve);
+    transform: rotate(-15deg);
+  }
+
+  .stamp-reject {
+    color: var(--reject);
+    border-color: var(--reject);
+    transform: rotate(15deg);
+  }
+
+  /* ── Decision Buttons ── */
+  .decision-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--li-card);
+    border-block-start: 1px solid var(--li-border);
+    padding: 12px 16px;
+    padding-block-end: max(12px, env(safe-area-inset-bottom));
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  .decision-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid;
+    background: var(--li-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
 
-  .action-btn:hover {
-    transform: scale(1.12);
+  .decision-btn svg {
+    width: 28px;
+    height: 28px;
   }
 
-  .action-btn.reject-btn:hover {
+  .decision-btn.reject-btn {
     border-color: var(--reject);
-    box-shadow: 0 0 24px var(--reject-glow);
-    background: rgba(239, 68, 68, 0.08);
   }
 
-  .action-btn.approve-btn:hover {
+  .decision-btn.reject-btn svg { fill: var(--reject); }
+
+  .decision-btn.reject-btn:hover, .decision-btn.reject-btn:active {
+    background: var(--reject);
+    transform: scale(1.1);
+  }
+
+  .decision-btn.reject-btn:hover svg, .decision-btn.reject-btn:active svg { fill: white; }
+
+  .decision-btn.approve-btn {
     border-color: var(--approve);
-    box-shadow: 0 0 24px var(--approve-glow);
-    background: rgba(34, 197, 94, 0.08);
   }
 
+  .decision-btn.approve-btn svg { fill: var(--approve); }
+
+  .decision-btn.approve-btn:hover, .decision-btn.approve-btn:active {
+    background: var(--approve);
+    transform: scale(1.1);
+  }
+
+  .decision-btn.approve-btn:hover svg, .decision-btn.approve-btn:active svg { fill: white; }
+
+  /* ── Empty State ── */
   .empty-state {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    color: var(--text-dim);
+    gap: 12px;
     text-align: center;
-    padding: 40px 20px;
+    padding: 60px 24px;
   }
 
-  .empty-state .emoji { font-size: 64px; }
-  .empty-state h2 { font-size: 20px; color: var(--text); }
-  .empty-state p { font-size: 14px; line-height: 1.6; }
+  .empty-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--li-card);
+    border: 1px solid var(--li-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
 
+  .empty-state h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--li-text);
+  }
+
+  .empty-state p {
+    font-size: 14px;
+    color: var(--li-text-secondary);
+    line-height: 1.5;
+    max-width: 280px;
+  }
+
+  .empty-state code {
+    background: #e8e8e8;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  /* ── Loading ── */
   .loading {
     flex: 1;
     display: flex;
@@ -282,40 +590,74 @@
   }
 
   .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--border);
-    border-block-start-color: var(--accent);
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--li-border);
+    border-block-start-color: var(--li-blue);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ── Flash effect ── */
+  @keyframes flashGreen {
+    0% { box-shadow: 0 0 0 0 rgba(5,118,66,0); }
+    50% { box-shadow: 0 0 0 6px rgba(5,118,66,0.25); }
+    100% { box-shadow: 0 0 0 0 rgba(5,118,66,0); }
+  }
+
+  @keyframes flashRed {
+    0% { box-shadow: 0 0 0 0 rgba(204,16,22,0); }
+    50% { box-shadow: 0 0 0 6px rgba(204,16,22,0.25); }
+    100% { box-shadow: 0 0 0 0 rgba(204,16,22,0); }
+  }
+
+  /* ── Card Animations ── */
   @keyframes cardEnter {
-    from { opacity: 0; transform: scale(0.92) translateY(20px); }
+    from { opacity: 0; transform: scale(0.95) translateY(12px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
   }
 
-  .card-enter { animation: cardEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .card-enter { animation: cardEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
   @keyframes flyRight {
-    to { transform: translateX(150%) rotate(20deg); opacity: 0; }
+    to { transform: translateX(120%) rotate(15deg); opacity: 0; }
   }
 
   @keyframes flyLeft {
-    to { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+    to { transform: translateX(-120%) rotate(-15deg); opacity: 0; }
   }
 
   .fly-right { animation: flyRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   .fly-left { animation: flyLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-  .char-count {
+  /* ── Keyboard hint ── */
+  .keyboard-hint {
+    text-align: center;
     font-size: 11px;
-    color: var(--text-dim);
-    text-align: end;
-    margin-block-start: -12px;
-    margin-block-end: 12px;
+    color: var(--li-text-secondary);
+    padding: 8px;
+    opacity: 0.7;
+  }
+
+  .keyboard-hint kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #f5f5f5;
+    font-size: 10px;
+    font-family: var(--font);
+    margin: 0 2px;
+    box-shadow: 0 1px 0 #bbb;
+  }
+
+  @media (max-width: 480px) {
+    .keyboard-hint { display: none; }
+    .card-area { padding: 12px 8px; }
+    .decision-btn { width: 54px; height: 54px; }
+    .decision-btn svg { width: 24px; height: 24px; }
   }
 </style>
 </head>
@@ -323,6 +665,136 @@
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
+
+const LikeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.46 11l-3.91-3.91a7 7 0 01-1.69-2.74l-.49-1.47A2.76 2.76 0 0010.76 1 2.75 2.75 0 008 3.74v1.12a9.19 9.19 0 00.46 2.85L8.89 9H4.12A2.12 2.12 0 002 11.12a2.16 2.16 0 00.92 1.76A2.11 2.11 0 002 14.62a2.14 2.14 0 001.28 2 2 2 0 00-.28 1 2.12 2.12 0 002 2.12v.14A2.12 2.12 0 007.12 22h7.49a8.08 8.08 0 003.58-.84l.31-.16H21V11zM19.5 19.5h-1l-.72.36a6.09 6.09 0 01-2.7.64H7.12a.62.62 0 01-.62-.62v-.14a.48.48 0 00-.36-.44 .62.62 0 01-.44-.59.48.48 0 00-.36-.44.64.64 0 01-.44-.59 .48.48 0 00-.36-.44.62.62 0 01-.44-.59.48.48 0 00-.36-.44.66.66 0 01-.44-.62v-.14a.62.62 0 01.63-.62H10l.34-.72a11.17 11.17 0 00-.83-4.59l-.43-1.25a7.13 7.13 0 01-.58-2.87V3.74a.75.75 0 01.76-.74.76.76 0 01.72.53l.49 1.47a9 9 0 002.13 3.5l4.5 4.5H19.5z"/></svg>
+);
+
+const CommentIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 9h10v1H7zm0 4h7v-1H7zm16-2a6.78 6.78 0 01-2.84 5.61L12 22v-4H8A7 7 0 018 4h8a7 7 0 017 7zm-2 0a5 5 0 00-5-5H8a5 5 0 000 10h6v2.28L18.73 15A4.79 4.79 0 0021 11z"/></svg>
+);
+
+const RepostIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.96 5H6c-1.65 0-3 1.35-3 3v4h2V8c0-.55.45-1 1-1h7.96L12 9.49l1.27 1.27L17.74 6.5 13.27 2.24 12 3.51 13.96 5zM10.04 19H18c1.65 0 3-1.35 3-3v-4h-2v4c0 .55-.45 1-1 1h-7.96l1.96-2.49-1.27-1.27-4.47 4.26 4.47 4.26 1.27-1.27L10.04 19z"/></svg>
+);
+
+const SendIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 3L0 10l7.66 4.26L14 8l-6.26 6.34L12 21l9-18z"/></svg>
+);
+
+const GlobeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14"><path d="M8 1a7 7 0 107 7 7 7 0 00-7-7zM3 8a5 5 0 011-3l.55.55A1.5 1.5 0 015 6.62v1.07a.75.75 0 00.22.53l.56.56a.75.75 0 01.22.53V11a.75.75 0 00.75.75 .75.75 0 01.75.75v.25a5 5 0 01-4.5-4.75zm6.43 4.25a5 5 0 003.07-3.69H11a1.5 1.5 0 01-1.5-1.5V6.5a.75.75 0 00-.75-.75 .75.75 0 01-.75-.75V3.54a5 5 0 011.43 8.71z"/></svg>
+);
+
+const CrossIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.36 5.64a1 1 0 00-1.41 0L12 10.59 7.05 5.64a1 1 0 10-1.41 1.41L10.59 12l-4.95 4.95a1 1 0 101.41 1.41L12 13.41l4.95 4.95a1 1 0 001.41-1.41L13.41 12l4.95-4.95a1 1 0 000-1.41z"/></svg>
+);
+
+const CheckIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+);
+
+function LinkedInPostCard({ post, swipeClass, onPointerDown, onPointerMove, onPointerUp, cardRef, cardClass }) {
+  const fullText = [post.hook, post.body].filter(Boolean).join('\n\n');
+  const charCount = fullText.length;
+
+  return (
+    <div
+      ref={cardRef}
+      className={`li-card ${cardClass} ${swipeClass}`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
+    >
+      {/* Swipe overlays */}
+      <div className={`swipe-overlay swipe-overlay-approve ${swipeClass === 'swiping-right' ? 'visible' : ''}`}>
+        <div className="swipe-stamp stamp-approve">Approve</div>
+      </div>
+      <div className={`swipe-overlay swipe-overlay-reject ${swipeClass === 'swiping-left' ? 'visible' : ''}`}>
+        <div className="swipe-stamp stamp-reject">Reject</div>
+      </div>
+
+      {/* Post Header */}
+      <div className="post-header">
+        <div className="profile-pic">SP</div>
+        <div className="post-author-info">
+          <div className="post-author-name">Shon Pazarker</div>
+          <div className="post-author-headline">Senior AI Engineer | Production LLM Systems</div>
+          <div className="post-time">
+            1h ago · <GlobeIcon />
+          </div>
+        </div>
+        <div className="post-header-actions">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M14 12a2 2 0 11-4 0 2 2 0 014 0zM4 10a2 2 0 100 4 2 2 0 000-4zm16 0a2 2 0 100 4 2 2 0 000-4z" fill="#666"/></svg>
+        </div>
+      </div>
+
+      {/* Post Body */}
+      <div className="post-body" dir="auto">
+        <div className="post-hook">{post.hook}</div>
+        {post.body}
+      </div>
+
+      {/* Reactions */}
+      <div className="post-reactions">
+        <div className="reactions-icons">
+          <span className="reaction-emoji reaction-like">👍</span>
+          <span className="reaction-emoji reaction-celebrate">👏</span>
+          <span className="reaction-emoji reaction-love">❤️</span>
+          <span className="reactions-count">{Math.floor(Math.random() * 80 + 20)}</span>
+        </div>
+        <span>{charCount} chars</span>
+      </div>
+
+      {/* LinkedIn Action Bar */}
+      <div className="post-actions">
+        <div className="li-action-btn"><LikeIcon /> Like</div>
+        <div className="li-action-btn"><CommentIcon /> Comment</div>
+        <div className="li-action-btn"><RepostIcon /> Repost</div>
+        <div className="li-action-btn"><SendIcon /> Send</div>
+      </div>
+    </div>
+  );
+}
+
+function MetadataPanel({ post }) {
+  const badgeClass = `badge-${post.category}`;
+  const sourceEmoji = post.source?.type === 'github' ? '🐙' : post.source?.type === 'research' ? '🔬' : '📰';
+
+  return (
+    <div className="meta-panel">
+      <div className="meta-panel-title">Post Details</div>
+      <div className="meta-tags">
+        <span className={`meta-badge ${badgeClass}`}>{post.category}</span>
+        <span className="meta-badge" style={{ background: '#f0f0f0', color: '#333' }}>
+          {sourceEmoji} {post.source?.type}
+        </span>
+      </div>
+      {post.source?.title && (
+        <div className="meta-row">
+          <span className="meta-icon">📄</span>
+          <span className="meta-label">Source:</span>
+          <span className="meta-value">{post.source.title}</span>
+        </div>
+      )}
+      {post.image_suggestion && (
+        <div className="meta-row">
+          <span className="meta-icon">🖼️</span>
+          <span className="meta-label">Image:</span>
+          <span className="meta-value">{post.image_suggestion}</span>
+        </div>
+      )}
+      {post.best_time && (
+        <div className="meta-row">
+          <span className="meta-icon">⏰</span>
+          <span className="meta-label">Post at:</span>
+          <span className="meta-value">{post.best_time}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function App() {
   const [posts, setPosts] = useState([]);
@@ -333,6 +805,7 @@ function App() {
   const [cardClass, setCardClass] = useState('card-enter');
   const cardRef = useRef(null);
   const dragState = useRef({ startX: 0, currentX: 0, dragging: false });
+  const decidingRef = useRef(false);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -356,8 +829,11 @@ function App() {
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
   const handleDecision = useCallback(async (decision) => {
+    if (decidingRef.current) return;
+    decidingRef.current = true;
+
     const post = posts[currentIdx];
-    if (!post) return;
+    if (!post) { decidingRef.current = false; return; }
 
     setSwipeClass('');
     setCardClass(decision === 'approve' ? 'fly-right' : 'fly-left');
@@ -366,7 +842,7 @@ function App() {
       await fetch(`/api/posts/${post.id}/${decision}`, { method: 'POST' });
       setStats(prev => ({
         ...prev,
-        pending: prev.pending - 1,
+        pending: Math.max(0, prev.pending - 1),
         [decision === 'approve' ? 'approved' : 'rejected']:
           prev[decision === 'approve' ? 'approved' : 'rejected'] + 1,
       }));
@@ -379,18 +855,21 @@ function App() {
       setPosts(nextPosts);
       setCurrentIdx(0);
       setCardClass('card-enter');
+      decidingRef.current = false;
     }, 400);
   }, [posts, currentIdx]);
 
   const handlePointerDown = useCallback((e) => {
+    if (decidingRef.current) return;
     dragState.current = { startX: e.clientX, currentX: e.clientX, dragging: true };
+    if (cardRef.current) cardRef.current.style.transition = 'none';
   }, []);
 
   const handlePointerMove = useCallback((e) => {
     if (!dragState.current.dragging || !cardRef.current) return;
     dragState.current.currentX = e.clientX;
     const dx = e.clientX - dragState.current.startX;
-    const rotation = dx * 0.08;
+    const rotation = dx * 0.06;
     cardRef.current.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
 
     if (dx > 60) setSwipeClass('swiping-right');
@@ -408,8 +887,8 @@ function App() {
     } else if (dx < -100) {
       handleDecision('reject');
     } else {
+      cardRef.current.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
       cardRef.current.style.transform = '';
-      cardRef.current.style.transition = 'transform 0.3s ease';
       setSwipeClass('');
       setTimeout(() => {
         if (cardRef.current) cardRef.current.style.transition = '';
@@ -427,16 +906,27 @@ function App() {
   }, [handleDecision]);
 
   const current = posts[currentIdx];
-  const badgeClass = current ? `badge-${current.category}` : '';
-  const sourceIcon = current?.source?.type === 'github' ? '🐙' : current?.source?.type === 'research' ? '🔬' : '📰';
+  const hasNext = posts.length > 1;
 
   return (
     <div className="app">
+      {/* Header */}
       <div className="header">
-        <h1>LinkedIn Advisor</h1>
-        <div className="subtitle">Swipe right to approve · left to reject</div>
+        <div className="header-inner">
+          <div className="header-brand">
+            <div className="header-logo">in</div>
+            <div>
+              <div className="header-title">LinkedIn Advisor</div>
+              <div className="header-subtitle">Swipe to review drafts</div>
+            </div>
+          </div>
+          <div className="char-count" style={{ display: current ? 'block' : 'none' }}>
+            {posts.length} draft{posts.length !== 1 ? 's' : ''} left
+          </div>
+        </div>
       </div>
 
+      {/* Stats */}
       <div className="stats-bar">
         <div className="stat pending">
           <div className="stat-value">{stats.pending}</div>
@@ -456,58 +946,44 @@ function App() {
         <div className="loading"><div className="spinner" /></div>
       ) : !current ? (
         <div className="empty-state">
-          <div className="emoji">✨</div>
-          <h2>All caught up</h2>
-          <p>No pending drafts. Run <code>linkedin-advisor generate</code> to create new ones.</p>
+          <div className="empty-icon">✨</div>
+          <h2>All caught up!</h2>
+          <p>No pending drafts to review. Generate new ones with:</p>
+          <p><code>linkedin-advisor generate</code></p>
         </div>
       ) : (
-        <>
-          <div className="card-container">
-            <div
-              ref={cardRef}
-              className={`card ${cardClass} ${swipeClass}`}
+        <div className="card-area">
+          <div className="card-stack">
+            {hasNext && <div className="card-behind" />}
+            <LinkedInPostCard
+              post={current}
+              swipeClass={swipeClass}
+              cardRef={cardRef}
+              cardClass={cardClass}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
-            >
-              <div className="swipe-indicator approve" style={{ opacity: swipeClass === 'swiping-right' ? 0.9 : 0 }}>✓</div>
-              <div className="swipe-indicator reject" style={{ opacity: swipeClass === 'swiping-left' ? 0.9 : 0 }}>✗</div>
-
-              <span className={`card-badge ${badgeClass}`}>{current.category}</span>
-              <div className="card-hook">{current.hook}</div>
-              <div className="char-count">{current.body?.length || 0} chars</div>
-              <div className="card-body">{current.body}</div>
-
-              <div className="card-meta">
-                <div className="meta-row">
-                  <span className="meta-icon">{sourceIcon}</span>
-                  <span className="meta-label">Source:</span>
-                  <span className="meta-value">{current.source?.title}</span>
-                </div>
-                {current.image_suggestion && (
-                  <div className="meta-row">
-                    <span className="meta-icon">🖼</span>
-                    <span className="meta-label">Image:</span>
-                    <span className="meta-value">{current.image_suggestion}</span>
-                  </div>
-                )}
-                {current.best_time && (
-                  <div className="meta-row">
-                    <span className="meta-icon">⏰</span>
-                    <span className="meta-label">Post at:</span>
-                    <span className="meta-value">{current.best_time}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            />
           </div>
 
-          <div className="actions">
-            <button className="action-btn reject-btn" onClick={() => handleDecision('reject')} title="Reject">✗</button>
-            <button className="action-btn approve-btn" onClick={() => handleDecision('approve')} title="Approve">✓</button>
+          <MetadataPanel post={current} />
+
+          <div className="keyboard-hint">
+            <kbd>←</kbd> reject · <kbd>→</kbd> approve
           </div>
-        </>
+        </div>
+      )}
+
+      {/* Fixed decision buttons */}
+      {current && (
+        <div className="decision-bar">
+          <button className="decision-btn reject-btn" onClick={() => handleDecision('reject')} title="Reject (←)">
+            <CrossIcon />
+          </button>
+          <button className="decision-btn approve-btn" onClick={() => handleDecision('approve')} title="Approve (→)">
+            <CheckIcon />
+          </button>
+        </div>
       )}
     </div>
   );
