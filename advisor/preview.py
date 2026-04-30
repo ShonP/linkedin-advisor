@@ -55,7 +55,7 @@ def generate_preview_image(post_text: str, author: str = "Shon Pazarker") -> Pat
     file_id = hashlib.md5(post_text.encode()).hexdigest()[:12]
     filename = f"{file_id}.png"
 
-    hti = Html2Image(output_path=str(_PREVIEWS_DIR), size=(620, 800))
+    hti = Html2Image(output_path=str(_PREVIEWS_DIR), size=(620, 1400))
     hti.screenshot(html_str=full_html, save_as=filename)
 
     path = _PREVIEWS_DIR / filename
