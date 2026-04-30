@@ -1,28 +1,11 @@
-# Environment
 .env
-*.env
-
-# Python
+data/
 __pycache__/
 *.pyc
-*.pyo
 .venv/
 venv/
 dist/
 *.egg-info/
-
-# Data (runtime generated)
-data/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
 .DS_Store
-Thumbs.db
-
-# uv
-uv.lock
 logs/
-checkpoints/
+uv.lock
