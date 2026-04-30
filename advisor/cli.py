@@ -98,3 +98,43 @@ def list_posts(status: str) -> None:
 
 if __name__ == "__main__":
     main()
+
+
+@main.command()
+@click.argument("draft_id")
+def approve(draft_id: str) -> None:
+    """Approve a draft."""
+    from advisor.pipeline import approve_draft
+
+    if approve_draft(draft_id):
+        click.echo(f"✅ Approved {draft_id}")
+    else:
+        click.echo(f"❌ Draft {draft_id} not found")
+
+
+@main.command()
+@click.argument("draft_id")
+def reject(draft_id: str) -> None:
+    """Reject a draft."""
+    from advisor.pipeline import reject_draft
+
+    if reject_draft(draft_id):
+        click.echo(f"🗑️ Rejected {draft_id}")
+    else:
+        click.echo(f"❌ Draft {draft_id} not found")
+
+
+@main.command()
+@click.argument("draft_id")
+@click.argument("instructions")
+def edit(draft_id: str, instructions: str) -> None:
+    """Edit a draft with instructions."""
+    from advisor.pipeline import edit_draft
+
+    result = asyncio.run(edit_draft(draft_id, instructions))
+    if result:
+        draft, image_path = result
+        click.echo(f"✏️ Edited: {draft.hook}")
+        click.echo(f"   Preview: {image_path}")
+    else:
+        click.echo(f"❌ Edit failed for {draft_id}")
