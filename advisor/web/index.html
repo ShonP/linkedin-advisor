@@ -13,16 +13,78 @@
     --li-blue-hover: #004182;
     --li-bg: #f3f2ef;
     --li-card: #ffffff;
+    --li-card-elev: #ffffff;
     --li-border: #e0dfdc;
+    --li-divider: #e8e8e8;
     --li-text: #191919;
     --li-text-secondary: #666666;
     --li-text-tertiary: #00000099;
     --li-icon: #666666;
+    --li-tag-bg: #f0f0f0;
+    --li-tag-text: #333333;
+    --li-kbd-bg: #f5f5f5;
+    --li-kbd-border: #ccc;
+    --li-kbd-shadow: #bbb;
+    --li-scrollbar: #ccc;
+    --li-shadow-card: 0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.1);
+    --li-shadow-soft: 0 1px 3px rgba(0,0,0,0.08);
+    --li-shadow-btn: 0 2px 8px rgba(0,0,0,0.1);
+    --badge-tech-bg: #e8f0fe;
+    --badge-tech-fg: #1967d2;
+    --badge-insight-bg: #fce8e6;
+    --badge-insight-fg: #c5221f;
+    --badge-story-bg: #fef7e0;
+    --badge-story-fg: #ea8600;
+    --badge-trend-bg: #e6f4ea;
+    --badge-trend-fg: #137333;
     --approve: #057642;
     --approve-flash: rgba(5, 118, 66, 0.15);
     --reject: #cc1016;
     --reject-flash: rgba(204, 16, 22, 0.15);
     --font: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --li-blue: #71b7fb;
+      --li-blue-hover: #9ccffc;
+      --li-bg: #000000;
+      --li-card: #1b1f23;
+      --li-card-elev: #1d2226;
+      --li-border: #38434f;
+      --li-divider: rgba(255,255,255,0.08);
+      --li-text: rgba(255,255,255,0.9);
+      --li-text-secondary: rgba(255,255,255,0.6);
+      --li-text-tertiary: rgba(255,255,255,0.45);
+      --li-icon: rgba(255,255,255,0.6);
+      --li-tag-bg: rgba(255,255,255,0.08);
+      --li-tag-text: rgba(255,255,255,0.9);
+      --li-kbd-bg: #2a2f35;
+      --li-kbd-border: #38434f;
+      --li-kbd-shadow: #0a0a0a;
+      --li-scrollbar: #38434f;
+      --li-shadow-card: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.6);
+      --li-shadow-soft: 0 1px 3px rgba(0,0,0,0.5);
+      --li-shadow-btn: 0 2px 8px rgba(0,0,0,0.6);
+      --li-stamp-overlay-approve: rgba(94, 197, 142, 0.18);
+      --li-stamp-overlay-reject: rgba(255, 99, 105, 0.18);
+      --badge-tech-bg: rgba(113, 183, 251, 0.16);
+      --badge-tech-fg: #71b7fb;
+      --badge-insight-bg: rgba(255, 99, 105, 0.16);
+      --badge-insight-fg: #ff8087;
+      --badge-story-bg: rgba(245, 158, 11, 0.18);
+      --badge-story-fg: #fbbf52;
+      --badge-trend-bg: rgba(94, 197, 142, 0.16);
+      --badge-trend-fg: #5ec58e;
+      --approve: #5ec58e;
+      --approve-flash: rgba(94, 197, 142, 0.18);
+      --reject: #ff6369;
+      --reject-flash: rgba(255, 99, 105, 0.18);
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body { color-scheme: dark; }
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -154,7 +216,7 @@
     background: var(--li-card);
     border-radius: 8px;
     border: 1px solid var(--li-border);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    box-shadow: var(--li-shadow-soft);
     z-index: 1;
   }
 
@@ -165,7 +227,7 @@
     background: var(--li-card);
     border-radius: 8px;
     border: 1px solid var(--li-border);
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: var(--li-shadow-card);
     z-index: 10;
     touch-action: pan-y;
     user-select: none;
@@ -177,11 +239,11 @@
   .li-card:active { cursor: grabbing; }
 
   .li-card.swiping-right {
-    box-shadow: 0 0 0 3px var(--approve), 0 4px 20px rgba(5, 118, 66, 0.25);
+    box-shadow: 0 0 0 3px var(--approve), 0 4px 20px var(--approve-flash);
   }
 
   .li-card.swiping-left {
-    box-shadow: 0 0 0 3px var(--reject), 0 4px 20px rgba(204, 16, 22, 0.25);
+    box-shadow: 0 0 0 3px var(--reject), 0 4px 20px var(--reject-flash);
   }
 
   /* ── Post Header (profile section) ── */
@@ -269,7 +331,7 @@
 
   .post-body::-webkit-scrollbar { width: 3px; }
   .post-body::-webkit-scrollbar-track { background: transparent; }
-  .post-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+  .post-body::-webkit-scrollbar-thumb { background: var(--li-scrollbar); border-radius: 3px; }
 
   .post-hook {
     font-weight: 600;
@@ -309,7 +371,7 @@
     justify-content: center;
     font-size: 10px;
     margin-inline-end: -3px;
-    border: 1.5px solid white;
+    border: 1.5px solid var(--li-card);
     position: relative;
   }
 
@@ -391,10 +453,10 @@
     line-height: 1.3;
   }
 
-  .badge-technical { background: #e8f0fe; color: #1967d2; }
-  .badge-insight { background: #fce8e6; color: #c5221f; }
-  .badge-story { background: #fef7e0; color: #ea8600; }
-  .badge-trend { background: #e6f4ea; color: #137333; }
+  .badge-technical { background: var(--badge-tech-bg); color: var(--badge-tech-fg); }
+  .badge-insight { background: var(--badge-insight-bg); color: var(--badge-insight-fg); }
+  .badge-story { background: var(--badge-story-bg); color: var(--badge-story-fg); }
+  .badge-trend { background: var(--badge-trend-bg); color: var(--badge-trend-fg); }
 
   .meta-row {
     display: flex;
@@ -502,7 +564,7 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: var(--li-shadow-btn);
   }
 
   .decision-btn svg {
@@ -559,6 +621,7 @@
     justify-content: center;
     font-size: 32px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    background: var(--li-card);
   }
 
   .empty-state h2 {
@@ -575,7 +638,8 @@
   }
 
   .empty-state code {
-    background: #e8e8e8;
+    background: var(--li-tag-bg);
+    color: var(--li-tag-text);
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 13px;
@@ -644,13 +708,14 @@
   .keyboard-hint kbd {
     display: inline-block;
     padding: 2px 6px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--li-kbd-border);
     border-radius: 3px;
-    background: #f5f5f5;
+    background: var(--li-kbd-bg);
+    color: var(--li-text);
     font-size: 10px;
     font-family: var(--font);
     margin: 0 2px;
-    box-shadow: 0 1px 0 #bbb;
+    box-shadow: 0 1px 0 var(--li-kbd-shadow);
   }
 
   @media (max-width: 480px) {
@@ -726,7 +791,7 @@ function LinkedInPostCard({ post, swipeClass, onPointerDown, onPointerMove, onPo
           </div>
         </div>
         <div className="post-header-actions">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M14 12a2 2 0 11-4 0 2 2 0 014 0zM4 10a2 2 0 100 4 2 2 0 000-4zm16 0a2 2 0 100 4 2 2 0 000-4z" fill="#666"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" style={{ fill: 'var(--li-icon)' }}><path d="M14 12a2 2 0 11-4 0 2 2 0 014 0zM4 10a2 2 0 100 4 2 2 0 000-4zm16 0a2 2 0 100 4 2 2 0 000-4z"/></svg>
         </div>
       </div>
 
@@ -767,7 +832,7 @@ function MetadataPanel({ post }) {
       <div className="meta-panel-title">Post Details</div>
       <div className="meta-tags">
         <span className={`meta-badge ${badgeClass}`}>{post.category}</span>
-        <span className="meta-badge" style={{ background: '#f0f0f0', color: '#333' }}>
+        <span className="meta-badge" style={{ background: 'var(--li-tag-bg)', color: 'var(--li-tag-text)' }}>
           {sourceEmoji} {post.source?.type}
         </span>
       </div>
