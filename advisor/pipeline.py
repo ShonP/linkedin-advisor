@@ -68,6 +68,9 @@ async def create_draft(topic: str = "") -> tuple[PostDraft, Path] | None:
         image_path = _render_preview(draft.hook, draft.body, diagram_path)
         log.info("Preview saved: %s diagram=%s", image_path, bool(diagram_path))
 
+        # Build full diagram prompt for metadata
+        diagram_prompt_full = _build_diagram_prompt(draft.image_suggestion) if draft.image_suggestion else None
+
         # Save run metadata
         metadata = {
             "run_id": run_id,
@@ -75,14 +78,15 @@ async def create_draft(topic: str = "") -> tuple[PostDraft, Path] | None:
             "draft_id": draft.id,
             "category": draft.category,
             "hook": draft.hook,
+            "body": draft.body,
             "body_chars": len(draft.body),
-            "source_type": draft.source.type if draft.source else None,
-            "source_title": draft.source.title if draft.source else None,
+            "source": draft.source.model_dump() if draft.source else None,
             "image_suggestion": draft.image_suggestion,
+            "diagram_prompt_full": diagram_prompt_full,
             "diagram_generated": diagram_path is not None,
             "diagram_path": str(diagram_path) if diagram_path else None,
             "preview_path": str(image_path),
-            "system_prompt_chars": len(getattr(generate_single_draft, '__wrapped__', lambda: '').__doc__ or ''),
+            "best_time": draft.best_time,
         }
 
         usage = get_token_usage()

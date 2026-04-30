@@ -60,7 +60,7 @@ SYSTEM_PROMPT = """\
 - פסקאות קצרות (2-3 משפטים)
 - סיום: שאלה שמזמינה תגובות
 - בלי hashtags, בלי לינקים בגוף
-- ב-image_suggestion: רעיון לתמונה + קישור GitHub repo רלוונטי
+- ב-image_suggestion: תיאור באנגלית בלבד של דיאגרמת ארכיטקטורה (MUST be in English for image generation)
 
 ## תהליך
 1. github_activity — מה שון עבד עליו (עדיפות ראשונה!)
