@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -67,7 +68,30 @@ async def create_draft(topic: str = "") -> tuple[PostDraft, Path] | None:
         image_path = _render_preview(draft.hook, draft.body, diagram_path)
         log.info("Preview saved: %s diagram=%s", image_path, bool(diagram_path))
 
+        # Save run metadata
+        metadata = {
+            "run_id": run_id,
+            "topic": topic,
+            "draft_id": draft.id,
+            "category": draft.category,
+            "hook": draft.hook,
+            "body_chars": len(draft.body),
+            "source_type": draft.source.type if draft.source else None,
+            "source_title": draft.source.title if draft.source else None,
+            "image_suggestion": draft.image_suggestion,
+            "diagram_generated": diagram_path is not None,
+            "diagram_path": str(diagram_path) if diagram_path else None,
+            "preview_path": str(image_path),
+            "system_prompt_chars": len(getattr(generate_single_draft, '__wrapped__', lambda: '').__doc__ or ''),
+        }
+
         usage = get_token_usage()
+        metadata["tokens"] = usage.to_dict()
+        metadata["est_cost_usd"] = round(usage.total_tokens * 0.000005, 4)
+
+        meta_path = Path("logs") / f"{run_id}_metadata.json"
+        meta_path.write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
+        log.info("Metadata saved: %s", meta_path)
         log.info("Draft created [%s]: %d tokens, est cost $%.4f",
                  run_id, usage.total_tokens, usage.total_tokens * 0.000005)
         return draft, image_path

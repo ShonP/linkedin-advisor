@@ -92,7 +92,10 @@ async def tool_call_logging(context: FunctionInvocationContext, next_handler) ->
         raise
     elapsed = (time.monotonic() - start) * 1000
     result_str = str(context.result) if context.result is not None else ""
+    # Log full result length to file, truncated to console
     log.info("Tool %s returned %d chars in %.0fms", context.function.name, len(result_str), elapsed)
+    if len(result_str) > 200:
+        log.debug("Tool %s result (first 500): %s", context.function.name, result_str[:500])
 
 
 _cache: dict[str, str] = {}
