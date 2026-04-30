@@ -104,6 +104,14 @@ class PostsDB:
     def list_rejected(self) -> list[dict[str, object]]:
         return self.list_by_status("rejected")
 
+    def update_draft_content(self, post_id: str, hook: str, body: str) -> bool:
+        cur = self._conn.execute(
+            "UPDATE drafts SET hook = ?, body = ?, status = 'pending', decided_at = '' WHERE id = ?",
+            (hook, body, post_id),
+        )
+        self._conn.commit()
+        return cur.rowcount > 0
+
     def get_post(self, post_id: str) -> dict[str, object] | None:
         row = self._conn.execute("SELECT * FROM drafts WHERE id = ?", (post_id,)).fetchone()
         return self._row_to_draft(row) if row else None

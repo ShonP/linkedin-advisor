@@ -1,105 +1,127 @@
-"""Pipeline: collect sources → generate drafts → save to DB.
-
-Uses the Agent Framework Functional Workflow API with @workflow/@step decorators.
-"""
+"""Pipeline: generate drafts, manage approvals, render previews."""
 
 from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
-from typing import Any
+from pathlib import Path
 
-from agent_framework import step, workflow
-
-from advisor.agents.content_creator import generate_post_drafts
+from advisor.agents.content_creator import edit_post_draft, generate_single_draft
 from advisor.db import PostsDB
 from advisor.log import attach_file_handler, detach_file_handler, log, new_run_id
 from advisor.middleware import get_token_usage, reset_token_usage
 from advisor.models.post import PostDraft
+from advisor.preview import generate_preview_image
 
 
-@step
-async def step_collect_sources() -> list[dict[str, str]]:
-    """Collect available content sources for the agent to use."""
-    log.info("Step 1/3: Collecting content sources")
-    sources: list[dict[str, str]] = []
+async def create_draft(topic: str = "") -> tuple[PostDraft, Path] | None:
+    """Generate a single draft, save to DB, render preview image."""
+    run_id = new_run_id()
+    reset_token_usage()
+    attach_file_handler()
+    log.info("Creating draft [%s] topic=%s", run_id, topic or "(open)")
 
-    from advisor.tools.read_digest import _DIGEST_PATH
-    from advisor.tools.read_reports import _REPORTS_DIR
+    try:
+        draft = await generate_single_draft(topic)
+        if not draft:
+            log.warning("No draft generated")
+            return None
 
-    if _DIGEST_PATH.exists():
-        sources.append({"type": "news", "name": "newsroom digest"})
-        log.info("  Found newsroom digest")
+        if not draft.created_at:
+            draft.created_at = datetime.now(UTC).isoformat()
 
-    if _REPORTS_DIR.exists():
-        report_count = len(list(_REPORTS_DIR.glob("**/*.md")))
-        sources.append({"type": "research", "name": f"{report_count} research reports"})
-        log.info("  Found %d research reports", report_count)
+        db = PostsDB()
+        try:
+            db.save_draft(draft)
+        finally:
+            db.close()
 
-    sources.append({"type": "github", "name": "GitHub activity"})
-    log.info("  GitHub activity will be fetched by agent")
+        full_text = f"{draft.hook}\n{draft.body}"
+        image_path = await generate_preview_image(full_text)
 
-    return sources
-
-
-@step
-async def step_generate_drafts() -> list[PostDraft]:
-    """Generate post drafts using the content creator agent."""
-    log.info("Step 2/3: Generating post drafts via content creator agent")
-    drafts = await generate_post_drafts()
-    log.info("Generated %d post drafts", len(drafts))
-    return drafts
+        usage = get_token_usage()
+        log.info("Draft created [%s], %d tokens", run_id, usage.total_tokens)
+        return draft, image_path
+    except Exception:
+        log.exception("Draft creation failed")
+        raise
+    finally:
+        detach_file_handler()
 
 
-@step
-async def step_save_drafts(drafts: list[PostDraft]) -> int:
-    """Save generated drafts to the SQLite database."""
-    log.info("Step 3/3: Saving %d drafts to database", len(drafts))
+def approve_draft(post_id: str) -> bool:
+    """Mark a draft as approved."""
     db = PostsDB()
     try:
-        for draft in drafts:
-            if not draft.created_at:
-                draft.created_at = datetime.now(UTC).isoformat()
-            db.save_draft(draft)
-        log.info("Saved %d drafts to database", len(drafts))
-        return len(drafts)
+        ok = db.approve(post_id)
+        if ok:
+            log.info("Approved draft %s", post_id)
+        return ok
     finally:
         db.close()
 
 
-@workflow(name="linkedin_advisor")
-async def advisor_workflow(input_data: Any) -> str:
-    await step_collect_sources()
-    drafts = await step_generate_drafts()
+def reject_draft(post_id: str) -> bool:
+    """Mark a draft as rejected."""
+    db = PostsDB()
+    try:
+        ok = db.reject(post_id)
+        if ok:
+            log.info("Rejected draft %s", post_id)
+        return ok
+    finally:
+        db.close()
 
-    if not drafts:
-        log.warning("No drafts generated")
-        return "No drafts generated."
 
-    count = await step_save_drafts(drafts)
-    return f"Generated and saved {count} post drafts."
+async def edit_draft(post_id: str, instructions: str) -> tuple[PostDraft, Path] | None:
+    """Revise an existing draft with edit instructions, re-render preview."""
+    db = PostsDB()
+    try:
+        post = db.get_post(post_id)
+    finally:
+        db.close()
+
+    if not post:
+        log.warning("Post %s not found for editing", post_id)
+        return None
+
+    original_text = f"{post['hook']}\n{post['body']}"
+    revised = await edit_post_draft(original_text, instructions)
+    if not revised:
+        return None
+
+    revised.id = post_id
+    revised.created_at = str(post.get("created_at", ""))
+
+    db = PostsDB()
+    try:
+        db.update_draft_content(post_id, revised.hook, revised.body)
+    finally:
+        db.close()
+
+    full_text = f"{revised.hook}\n{revised.body}"
+    image_path = await generate_preview_image(full_text)
+
+    log.info("Edited draft %s", post_id)
+    return revised, image_path
+
+
+def list_approved() -> list[dict[str, object]]:
+    """Return all approved drafts."""
+    db = PostsDB()
+    try:
+        return db.list_approved()
+    finally:
+        db.close()
 
 
 async def run_pipeline() -> str:
-    """Run the full content generation pipeline."""
-    run_id = new_run_id()
-    reset_token_usage()
-    attach_file_handler()
-    log.info("Pipeline starting [%s]", run_id)
-
-    try:
-        result = await advisor_workflow.run({})
-        outputs = result.get_outputs()
-        summary = str(outputs[0]) if outputs else "Pipeline completed."
-
-        usage = get_token_usage()
-        log.info("Pipeline complete [%s], %d tokens", run_id, usage.total_tokens)
-        return summary
-    except Exception:
-        log.exception("Pipeline failed")
-        raise
-    finally:
-        detach_file_handler()
+    """Run the content generation pipeline (backward-compatible entry point)."""
+    result = await create_draft()
+    if result:
+        draft, image_path = result
+        return f"Generated draft '{draft.hook[:50]}...' — preview: {image_path}"
+    return "No draft generated."
 
 
 def run_pipeline_sync() -> str:

@@ -8,7 +8,7 @@ from advisor.client import get_chat_client
 from advisor.config import get_settings
 from advisor.log import log
 from advisor.middleware import caching, llm_call_logging, retry, tool_call_logging
-from advisor.models.post import PostDraft, PostDrafts
+from advisor.models.post import PostDraft, SingleDraftResponse
 from advisor.tools.github_activity import github_activity
 from advisor.tools.read_digest import read_digest
 from advisor.tools.read_reports import read_reports
@@ -31,9 +31,9 @@ SYSTEM_PROMPT = """\
 "מכירים את זה שאתם מבקשים מקלוד שיחקור לכם משהו והוא עושה לכם בלחץ 3 web fetches?
 אז הבנתי שאני צריך deep-research ורוב הכלים עולים לא מעט כסף אז החלטתי פשוט לבנות בעצמי..."
 
-## Hook Formulas (3 וריאנטים לכל פוסט):
+## Hook Formulas (בחר אחד לפוסט):
 - curiosityGap: "רוב הכישלונות ב-RAG קורים אחרי שהretrieval עובד."
-- boldClaim: "הevals שלכם כנראה מודדים את הדבר הלא נכון."  
+- boldClaim: "הevals שלכם כנראה מודדים את הדבר הלא נכון."
 - storyOpener: "תיקנתי את המערכת רק אחרי שהפסקתי להאשים את הretrieval."
 - question: "מכירים את זה ש...?"
 - metric: "בניתי pipeline שסורק 80 מקורות ב-6 דקות. הנה איך."
@@ -63,12 +63,19 @@ SYSTEM_PROMPT = """\
 1. github_activity — מה שון עבד עליו (עדיפות ראשונה!)
 2. read_reports — מחקרים שהריץ
 3. read_digest — חדשות אחרונות
-4. ייצר 3-5 drafts, כל אחד מזווית שונה ומקטגוריה שונה
+4. ייצר draft אחד, הכי חזק, בעברית
+"""
+
+EDIT_SYSTEM_PROMPT = """\
+אתה עורך תוכן ללינקדין. קיבלת פוסט קיים והוראות עריכה.
+ערוך את הפוסט לפי ההוראות בדיוק. שמור על הסגנון, האורך, והמבנה של הפוסט המקורי.
+אל תשנה את הנושא אלא אם ההוראות מבקשות זאת.
+החזר את הפוסט המעודכן בפורמט המבוקש.
 """
 
 
-async def generate_post_drafts() -> list[PostDraft]:
-    """Run the content creator agent and return structured PostDraft list."""
+async def generate_single_draft(topic: str = "") -> PostDraft | None:
+    """Run the content creator agent and return a single PostDraft."""
     settings = get_settings()
     username = settings.github_username or "ShonP"
 
@@ -80,19 +87,43 @@ async def generate_post_drafts() -> list[PostDraft]:
         middleware=[tool_call_logging, caching, retry, llm_call_logging],
     )
 
+    topic_line = f"הנושא: {topic}. " if topic else ""
     prompt = (
-        f"ייצר LinkedIn post drafts עבור שון (GitHub: {username}). "
+        f"ייצר LinkedIn post draft אחד עבור שון (GitHub: {username}). "
+        f"{topic_line}"
         "קודם תבדוק GitHub activity, אח\"כ research reports, ולבסוף חדשות. "
-        "עדיפות למה שהוא באמת בנה. ייצר 3-5 drafts בעברית."
+        "עדיפות למה שהוא באמת בנה. ייצר draft אחד בעברית."
     )
 
-    log.info("Starting content generation for @%s", username)
-    response = await agent.run(prompt, options={"response_format": PostDrafts})
+    log.info("Starting single draft generation for @%s", username)
+    response = await agent.run(prompt, options={"response_format": SingleDraftResponse})
 
     if response.value:
-        drafts = response.value.drafts
-        log.info("Content creator generated %d drafts", len(drafts))
-        return drafts
+        log.info("Content creator generated draft: %s", response.value.draft.hook[:60])
+        return response.value.draft
 
     log.error("Content creator failed, raw: %s", response.text[:200])
-    return []
+    return None
+
+
+async def edit_post_draft(original_text: str, instructions: str) -> PostDraft | None:
+    """Revise an existing draft based on edit instructions."""
+    agent = Agent(
+        client=get_chat_client(),
+        name="content-editor",
+        instructions=EDIT_SYSTEM_PROMPT,
+        tools=[],
+        middleware=[llm_call_logging],
+    )
+
+    prompt = f"הפוסט המקורי:\n\n{original_text}\n\nהוראות עריכה: {instructions}"
+
+    log.info("Editing draft with instructions: %s", instructions[:80])
+    response = await agent.run(prompt, options={"response_format": SingleDraftResponse})
+
+    if response.value:
+        log.info("Editor produced revised draft")
+        return response.value.draft
+
+    log.error("Edit failed, raw: %s", response.text[:200])
+    return None

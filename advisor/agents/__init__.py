@@ -1,5 +1,5 @@
 from __future__ import annotations
 
-from advisor.agents.content_creator import generate_post_drafts
+from advisor.agents.content_creator import edit_post_draft, generate_single_draft
 
-__all__ = ["generate_post_drafts"]
+__all__ = ["edit_post_draft", "generate_single_draft"]

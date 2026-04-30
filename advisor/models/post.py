@@ -29,6 +29,12 @@ class PostDrafts(BaseModel):
     drafts: list[PostDraft]
 
 
+class SingleDraftResponse(BaseModel):
+    """Structured output wrapper for single draft generation."""
+
+    draft: PostDraft
+
+
 class PostDecision(BaseModel):
     post_id: str
     decision: str = Field(description="'approved' or 'rejected'")

@@ -13,13 +13,37 @@ def main() -> None:
 
 
 @main.command()
-def generate() -> None:
-    """Run the pipeline to generate new post drafts."""
-    from advisor.pipeline import run_pipeline
+@click.option("--topic", default="", help="Optional topic to focus on.")
+def generate(topic: str) -> None:
+    """Generate a single post draft."""
+    from advisor.pipeline import create_draft
 
-    click.echo("🚀 Generating LinkedIn post drafts...")
-    result = asyncio.run(run_pipeline())
-    click.echo(f"✅ {result}")
+    click.echo("🚀 Generating LinkedIn post draft...")
+    result = asyncio.run(create_draft(topic))
+    if not result:
+        click.echo("❌ No draft generated.")
+        return
+    draft, image_path = result
+    click.echo(f"✅ Draft created: {draft.hook}")
+    click.echo(f"   ID: {draft.id}")
+    click.echo(f"   Preview: {image_path}")
+
+
+@main.command()
+@click.option("--topic", default="", help="Optional topic to focus on.")
+def preview(topic: str) -> None:
+    """Generate a draft and open its preview image."""
+    from advisor.pipeline import create_draft
+
+    click.echo("🚀 Generating draft with preview...")
+    result = asyncio.run(create_draft(topic))
+    if not result:
+        click.echo("❌ No draft generated.")
+        return
+    draft, image_path = result
+    click.echo(f"✅ {draft.hook}")
+    click.echo(f"   ID: {draft.id}")
+    click.launch(str(image_path))
 
 
 @main.command()
