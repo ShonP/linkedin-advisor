@@ -37,7 +37,7 @@ async def create_draft(topic: str = "") -> tuple[PostDraft, Path] | None:
             db.close()
 
         full_text = f"{draft.hook}\n{draft.body}"
-        image_path = await generate_preview_image(full_text)
+        image_path = generate_preview_image(full_text)
 
         usage = get_token_usage()
         log.info("Draft created [%s], %d tokens", run_id, usage.total_tokens)
@@ -100,7 +100,7 @@ async def edit_draft(post_id: str, instructions: str) -> tuple[PostDraft, Path] 
         db.close()
 
     full_text = f"{revised.hook}\n{revised.body}"
-    image_path = await generate_preview_image(full_text)
+    image_path = generate_preview_image(full_text)
 
     log.info("Edited draft %s", post_id)
     return revised, image_path
