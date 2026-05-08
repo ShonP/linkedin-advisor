@@ -5,14 +5,16 @@ from __future__ import annotations
 import click
 
 from advisor.cli_draft import draft
+from advisor.cli_social import social
 
 
 @click.group()
 def main() -> None:
-    """LinkedIn Content Advisor — generate and manage LinkedIn post drafts."""
+    """Social Content Advisor — multi-platform draft generation and management."""
 
 
 main.add_command(draft)
+main.add_command(social)
 
 
 @main.group()

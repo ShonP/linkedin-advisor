@@ -1,12 +1,16 @@
-"""Pydantic models for LinkedIn post drafts and decisions."""
+"""Pydantic models for social post drafts and decisions."""
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+Platform = Literal["linkedin", "reddit", "twitter"]
 
 
 class ContentSource(BaseModel):
-    type: str = Field(description="Source type: 'github', 'news', or 'research'")
+    type: str = Field(description="Source type: 'github', 'news', 'research', or 'digest'")
     title: str
     url: str = ""
     summary: str = ""
@@ -14,9 +18,10 @@ class ContentSource(BaseModel):
 
 class PostDraft(BaseModel):
     id: str = Field(description="UUID for this draft")
+    platform: Platform = Field(default="linkedin", description="Target platform")
     hook: str = Field(description="Opening line — attention grabber")
-    body: str = Field(description="Full post text, 1200-1500 characters")
-    category: str = Field(description="One of: technical, insight, story, trend")
+    body: str = Field(description="Full post text")
+    category: str = Field(description="One of: technical, insight, story, trend, discussion")
     source: ContentSource
     image_suggestion: str = Field(default="", description="What image or visual would enhance this post")
     best_time: str = Field(default="", description="Suggested posting time, e.g. 'Tuesday 9am EST'")
