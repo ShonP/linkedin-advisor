@@ -107,7 +107,7 @@ def digest(topic: str) -> None:
         click.echo("❌ Digest failed.")
         return
     click.echo(f"✅ {len(result.proposals)} proposals saved")
-    click.echo(f"   Summary: {result.summary[:160]}")
+    click.echo(f"   Notes: {result.notes[:160]}")
     for p in result.proposals:
         marker = f"r/{p.suggested_subreddit}" if p.platform == "reddit" else p.platform
         click.echo(f"   • [{marker}] ({p.confidence:.2f}) {p.headline}")
