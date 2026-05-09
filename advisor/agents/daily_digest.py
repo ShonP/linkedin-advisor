@@ -7,12 +7,12 @@ from datetime import UTC, datetime
 
 from agent_framework import Agent
 from pydantic import BaseModel
+from shon_toolkit.client import get_chat_client
+from shon_toolkit.log import log
+from shon_toolkit.middleware import caching, llm_call_logging, retry, tool_call_logging
+from shon_toolkit.tools.github_activity import github_activity
 
-from advisor.client import get_chat_client
-from advisor.log import log
-from advisor.middleware import caching, llm_call_logging, retry, tool_call_logging
 from advisor.models.proposal import ContentProposal, DailyDigest
-from advisor.tools.github_activity import github_activity
 from advisor.tools.read_digest import read_digest
 from advisor.tools.read_repo import read_repo
 from advisor.tools.read_reports import read_reports

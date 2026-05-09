@@ -27,7 +27,7 @@ def image() -> None:
 @click.option("--filename", default="", help="Output filename.")
 def image_generate(prompt: str, filename: str) -> None:
     """Generate an image with gpt-image-2."""
-    from advisor.tools.generate_image import generate_image
+    from shon_toolkit.tools.generate_image import generate_image
 
     path = generate_image(prompt, filename)
     if path:

@@ -1,29 +1,18 @@
-"""Application settings loaded from environment variables."""
+"""Application settings — extends shon-toolkit's BaseToolkitSettings."""
 
 from __future__ import annotations
 
-from pydantic_settings import BaseSettings
+from shon_toolkit.client import configure_settings_class
+from shon_toolkit.client import get_settings as _get_settings
+from shon_toolkit.config import BaseToolkitSettings
 
 
-class Settings(BaseSettings):
-    """Configuration loaded from .env file and environment variables."""
-
-    azure_api_key: str = ""
-    openai_base_url: str = ""
-    model: str = "gpt-5.5"
-    tavily_api_key: str = ""
-    github_username: str = ""
-    azure_image_endpoint: str = ""
-
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
+class Settings(BaseToolkitSettings):
+    pass
 
 
-_settings: Settings | None = None
+configure_settings_class(Settings)
 
 
 def get_settings() -> Settings:
-    """Return cached Settings instance (created on first call)."""
-    global _settings
-    if _settings is None:
-        _settings = Settings()
-    return _settings
+    return _get_settings()  # type: ignore[return-value]

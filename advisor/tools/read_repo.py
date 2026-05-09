@@ -7,8 +7,7 @@ import json
 import subprocess
 
 from agent_framework import tool
-
-from advisor.log import log
+from shon_toolkit.log import log
 
 _KEY_FILES = [
     "README.md",

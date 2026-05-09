@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 
 from agent_framework import tool
+from shon_toolkit.log import log
 from tavily import TavilyClient
 
 from advisor.config import get_settings
-from advisor.log import log
 
 _PLATFORM_QUERIES = {
     "linkedin": 'site:linkedin.com/posts "{niche}"',
