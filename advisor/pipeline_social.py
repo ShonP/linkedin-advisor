@@ -6,14 +6,13 @@ import asyncio
 import uuid
 from datetime import UTC, datetime
 
-from shon_toolkit.log import attach_file_handler, detach_file_handler, log, new_run_id
-from shon_toolkit.middleware import reset_token_usage
-
 from advisor.agents.copy_agent import run_copy_research
 from advisor.agents.daily_digest import run_daily_digest
 from advisor.agents.reddit_agent import generate_reddit_post
 from advisor.agents.twitter_agent import generate_twitter_post
 from advisor.db import PostsDB
+from advisor.log import attach_file_handler, detach_file_handler, log, new_run_id
+from advisor.middleware import reset_token_usage
 from advisor.models.copy import CopyAnalysis
 from advisor.models.post import PostDraft
 from advisor.models.proposal import DailyDigest
